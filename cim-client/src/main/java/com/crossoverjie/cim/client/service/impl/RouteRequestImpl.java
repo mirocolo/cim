@@ -3,6 +3,7 @@ package com.crossoverjie.cim.client.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.crossoverjie.cim.client.config.AppConfiguration;
+import com.crossoverjie.cim.client.service.EchoService;
 import com.crossoverjie.cim.client.service.RouteRequest;
 import com.crossoverjie.cim.client.vo.req.GroupReqVO;
 import com.crossoverjie.cim.client.vo.req.LoginReqVO;
@@ -45,11 +46,13 @@ public class RouteRequestImpl implements RouteRequest {
     private String p2pRouteRequestUrl;
 
     @Value("${cim.server.route.request.url}")
-    private String serverRouteRequestUrl;
+    private String serverRouteLoginUrl;
 
     @Value("${cim.server.online.user.url}")
     private String onlineUserUrl;
 
+    @Autowired
+    private EchoService echoService ;
 
 
     @Autowired
@@ -120,7 +123,7 @@ public class RouteRequestImpl implements RouteRequest {
         RequestBody requestBody = RequestBody.create(mediaType,jsonObject.toString());
 
         Request request = new Request.Builder()
-                .url(serverRouteRequestUrl)
+                .url(serverRouteLoginUrl)
                 .post(requestBody)
                 .build();
 
@@ -136,7 +139,7 @@ public class RouteRequestImpl implements RouteRequest {
 
             //重复失败
             if (!cimServerResVO.getCode().equals(StatusEnum.SUCCESS.getCode())){
-                LOGGER.error(appConfiguration.getUserName() + ":" + cimServerResVO.getMessage());
+                echoService.echo(cimServerResVO.getMessage());
                 System.exit(-1);
             }
 
@@ -177,5 +180,27 @@ public class RouteRequestImpl implements RouteRequest {
         }
 
         return onlineUsersResVO.getDataBody();
+    }
+
+    @Override
+    public void offLine() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("userId", appConfiguration.getUserId());
+        jsonObject.put("msg", "offLine");
+        RequestBody requestBody = RequestBody.create(mediaType, jsonObject.toString());
+
+        Request request = new Request.Builder()
+                .url(appConfiguration.getClearRouteUrl())
+                .post(requestBody)
+                .build();
+
+        Response response = null;
+        try {
+            response = okHttpClient.newCall(request).execute();
+        } catch (IOException e) {
+            LOGGER.error("exception",e);
+        } finally {
+            response.body().close();
+        }
     }
 }

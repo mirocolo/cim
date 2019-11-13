@@ -153,7 +153,7 @@ public class AccountServiceRedisImpl implements AccountService {
         CIMUserInfo cimUserInfo = userInfoCacheService.loadUserInfoByUserId(sendUserId);
 
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("msg", cimUserInfo.getUserName() + ":【" + groupReqVO.getMsg() + "】");
+        jsonObject.put("msg", cimUserInfo.getUserName() + ":" + groupReqVO.getMsg());
         jsonObject.put("userId", groupReqVO.getUserId());
         RequestBody requestBody = RequestBody.create(mediaType, jsonObject.toString());
 
@@ -174,6 +174,9 @@ public class AccountServiceRedisImpl implements AccountService {
 
     @Override
     public void offLine(Long userId) throws Exception {
+
+        // TODO: 2019-01-21 改为一个原子命令，以防数据一致性
+
         //删除路由
         redisTemplate.delete(ROUTE_PREFIX + userId) ;
 
